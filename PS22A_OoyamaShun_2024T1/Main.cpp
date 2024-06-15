@@ -13,7 +13,7 @@ namespace constants {
 	}
 }
 
-class GameManager {
+class Manager {
 public:
 	int Score;
 	int Life;
@@ -27,8 +27,8 @@ public:
 	Font GameClearFont;
 	bool IsPlayGame;
 
-	GameManager()
-		:Score(0), Life(4),ScoreText(U"score:{}"_fmt(Score)), ScoreFont{20}, GameClearFont{50},
+	Manager()
+		: Score(0), Life(4), ScoreText(U"score:{}"_fmt(Score)), ScoreFont{20}, GameClearFont{50},
 		GameClearText(), GameOverFont{ 50 }, GameOverText(),
 		LifeText(U"残機:{}"_fmt(Life+1)), LifeFont{ 50 },
 		IsPlayGame(true) {}
@@ -66,17 +66,19 @@ class Ball {
 public:
 	Vec2 Velocity;
 	Circle ball;
+	int Color;
 
-	Ball() : Velocity({ 0,-constants::ball::SPEED }), ball(400, 400, 8) {}
+	Ball() : Velocity({ 0,-constants::ball::SPEED }), ball(400, 400, 8) ,Color(0){}
 	void Draw() {
-		ball.draw();
+		ball.draw(HSV{Color});
 	}
-	void Update(GameManager* manager) {
+	void Update(Manager* manager) {
 		ball.moveBy(Velocity * Scene::DeltaTime());
 		if (ball.y > 600) {
 			if (manager->TryContinue()){
 				ball.x = Cursor::Pos().x;
 				ball.y = 400;
+				Velocity={ 0,-constants::ball::SPEED };
 			}
 		}
 	}
@@ -107,7 +109,7 @@ public:
 			brickTable[i].stretched(-1).draw(HSV{ brickTable[i].y - 40 });
 		}
 	}
-	void Intercects(Ball* target, GameManager* manager) {
+	void Intercects(Ball* target, Manager* manager) {
 		using namespace constants::brick;
 		// ブロックとの衝突を検知
 		for (int i = 0; i < MAX; ++i) {
@@ -115,10 +117,10 @@ public:
 
 			if (refBrick.intersects(target->ball)) {
 				// ブロックの上辺、または底辺と交差
+				target->Color = refBrick.y - 40;
 				if (refBrick.bottom().intersects(target->ball)
-					|| refBrick.top().intersects(target->ball))
-				{
-					target->Velocity.y *= -1;
+					|| refBrick.top().intersects(target->ball)){
+					target->Velocity.y *= -1;					
 				}
 				else // ブロックの左辺または右辺と交差
 				{
@@ -180,7 +182,7 @@ void Main()
 	Ball ball;
 	Bricks bricks;
 	Paddle paddle;
-	GameManager manager;
+	Manager manager;
 
 	while (System::Update())
 	{
